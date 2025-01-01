@@ -29,9 +29,9 @@ internal sealed class NatsChannels
     {
         _prefix = prefix;
 
-        All = prefix + ":all";
-        GroupManagement = prefix + ":internal:groups";
-        ReturnResults = _prefix + ":internal:return:" + serverName;
+        All = prefix + ".all";
+        GroupManagement = prefix + ".internal.groups";
+        ReturnResults = _prefix + ".internal.return." + serverName;
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ internal sealed class NatsChannels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string Connection(string connectionId)
     {
-        return _prefix + ":connection:" + connectionId;
+        return _prefix + ".connection." + connectionId;
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ internal sealed class NatsChannels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string Group(string groupName)
     {
-        return _prefix + ":group:" + groupName;
+        return _prefix + ".group." + groupName;
     }
 
     /// <summary>
@@ -61,7 +61,7 @@ internal sealed class NatsChannels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string User(string userId)
     {
-        return _prefix + ":user:" + userId;
+        return _prefix + ".user." + userId;
     }
 
     /// <summary>
@@ -72,6 +72,6 @@ internal sealed class NatsChannels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string Ack(string serverName)
     {
-        return _prefix + ":internal:ack:" + serverName;
+        return _prefix + ".internal.ack." + serverName;
     }
 }

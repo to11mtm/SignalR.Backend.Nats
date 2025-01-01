@@ -758,6 +758,11 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub>, IDisposabl
                         NatsLog.ConnectionRestored(_logger);
                         return ValueTask.CompletedTask;
                     };
+                    _NatsServerConnection.ConnectionDisconnected += (_, e) =>
+                    {
+                        NatsLog.ConnectionFailed(_logger, new NatsException(e.Message));
+                        return ValueTask.CompletedTask;
+                    };
                     /*
                     _NatsServerConnection.ConnectionRestored += (_, e) =>
                     {
