@@ -288,12 +288,24 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub>, IDisposabl
 
     private async Task
         //<long>
-        PublishAsync(string channel, byte[] payload)
+        PublishAsync(string channel, byte[] payload, bool throwForNoResponders = false)
     {
         await EnsureNatsServerConnection();
         NatsLog.PublishToChannel(_logger, channel);
         await _NatsServerConnection!.PublishAsync(channel, payload);
     }
+    
+    private async Task<NatsMsg<byte>>
+        //<long>
+        ReqInvocationAsync(string channel, byte[] payload, bool throwForNoResponders = true)
+    {
+        await EnsureNatsServerConnection();
+        NatsLog.PublishToChannel(_logger, channel);
+        return await _NatsServerConnection!.RequestAsync<byte[], byte>(channel, payload,
+            replyOpts: throwForNoResponders ? NoResponders : null);
+    }
+
+    private static NatsSubOpts NoResponders = new NatsSubOpts() with { ThrowIfNoResponders = true }; 
 
     private Task AddGroupAsyncCore(HubConnectionContext connection, string groupName)
     {
@@ -393,13 +405,8 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub>, IDisposabl
             {
                 // TODO: Need to handle other server going away while waiting for connection result
                 var messageBytes = _protocol.WriteInvocation(methodName, args, invocationId, returnChannel: _channels.ReturnResults);
-                //TODO: FIX INVOCATION HERE
-                //var received =
-                await PublishAsync(_channels.Connection(connectionId), messageBytes);
-                //if (received < 1)
-                //{
-                //    throw new IOException($"Connection '{connectionId}' does not exist.");
-                //}
+                // TODO: Fallback for ack.
+                await ReqInvocationAsync(_channels.Connection(connectionId), messageBytes, throwForNoResponders: true);
             }
             else
             {
@@ -534,6 +541,10 @@ public class NatsHubLifetimeManager<THub> : HubLifetimeManager<THub>, IDisposabl
                 // This is a Client result we need to setup state for the completion and forward the message to the client
                 if (!string.IsNullOrEmpty(invocation.InvocationId))
                 {
+                    if (channelMessage.ReplyTo != null)
+                    {
+                        _ = channelMessage.ReplyAsync((byte)1).ConfigureAwait(false);
+                    }
                     CancellationTokenRegistration? tokenRegistration = null;
                     _clientResultsManager.AddInvocation(invocation.InvocationId,
                         (typeof(RawResult), connection.ConnectionId, null!, async (_, completionMessage) =>
